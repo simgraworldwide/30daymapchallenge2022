@@ -41,8 +41,8 @@ rds$id <- base::rownames(rds@data)
 # join the attribute table from the spatial object to the new data frame
 rds_df <- dplyr::left_join(rds_df, rds@data, by = "id") %>%
   dplyr::mutate(vmax_bin = dplyr::case_when(
-    vmax <= 30 ~ "<=30",
-    vmax >= 60 ~ ">=60",
+    vmax <= 30 ~ "≤30",
+    vmax >= 60 ~ "≥60",
     TRUE ~ "50"
   ))
 
@@ -80,7 +80,7 @@ acc_bcl <- acc %>%
 
 # DRAW MAP =====================================================================
 
-png("01_02_points_lines/01_02.png", width = 2500, height = 2500, res = 200)
+png("01_02_points_lines/01_02.png", width = 2000, height = 2000, res = 200)
 
 ggplot2::ggplot() +
   ggplot2::geom_path(
@@ -105,10 +105,11 @@ ggplot2::ggplot() +
   ) +
   ggplot2::theme_minimal() +
   ggplot2::labs(
-    title = "Accident Locations involving Bicycles in Zurich 2011-2021",
-    subtitle = "by Type of Accident and (current) Speed Limit",
+    # title = "Accident Locations involving Bicycles in Zurich 2011-2021",
+    # subtitle = "by Type of Accident and (current) Speed Limit",
     shape = "Accident Type",
     colour = "Speed Limit"
-  )
+  ) +
+  ggplot2::theme(legend.position = c(0.125, 0.2))
 
 dev.off()
