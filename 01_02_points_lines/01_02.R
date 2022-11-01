@@ -90,7 +90,7 @@ ggplot2::ggplot() +
       y = lat,
       group = group,
       # colour = factor(vmax)
-      colour = factor(vmax_bin, levels = c("<=30", "50", ">=60"))
+      colour = factor(vmax_bin, levels = c("≤30", "50", "≥60"))
     )
   ) +
   ggplot2::scale_color_manual(values = c("#BA9746", "#466EA1", "#C13B3B")) +
@@ -108,7 +108,8 @@ ggplot2::ggplot() +
     # title = "Accident Locations involving Bicycles in Zurich 2011-2021",
     # subtitle = "by Type of Accident and (current) Speed Limit",
     shape = "Accident Type",
-    colour = "Speed Limit"
+    colour = "Speed Limit",
+    caption="Data: Stadt Zürich"
   ) +
   ggplot2::theme(legend.position = c(0.125, 0.2))
 
