@@ -80,7 +80,7 @@ acc_bcl <- acc %>%
 
 # DRAW MAP =====================================================================
 
-png("01_02_points_lines/01_02.png", width = 2000, height = 2000, res = 200)
+png("01_02_points_lines/01_02.png", width = 2800, height = 2500, res = 200)
 
 ggplot2::ggplot() +
   ggplot2::geom_path(
