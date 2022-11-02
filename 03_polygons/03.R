@@ -3,14 +3,16 @@
 
 # define required packages
 required_packages <- c(
+  "ggnewscale",
   "rgdal",
   "broom",
-  "geojsonR",
+  "sp",
+  "rgeos",
   "readr",
   "ggplot2",
-  "dplyr"
+  "dplyr",
+  "stringr"
 )
-
 
 ## load CRAN packages
 if (exists("required_packages")) {
@@ -30,4 +32,136 @@ rm(new_packages, required_packages)
 
 
 # LOAD DATA ====================================================================
+
+# geodata for the municipality shapes and lakes
+tmp <- tempfile()
+dir <- tempdir()
+download.file("https://www.web.statistik.zh.ch/ogd/daten/ressourcen/KTZH_00000151_00001254.zip", tmp)
+unzip(tmp, exdir = dir)
+gde <- rgdal::readOGR(paste0(dir, "/GEN_A4_GEMEINDEN_2019_epsg2056_json/GEN_A4_GEMEINDEN_SEEN_2019_epsg2056.json"))
+gde$ID <- paste0(gde$ART_TEXT, gde$NAME)
+file.remove(tmp)
+unlink(dir)
+
+# voting data
+vot_raw <- readr::read_csv("https://www.web.statistik.zh.ch/ogd/data/KANTON_ZUERICH_abstimmungsarchiv_gemeinden.csv")
+
+
+# DATA WRANGLING ===============================================================
+
+
+# voting data
+vot <- vot_raw %>%
+  filter(stringr::str_detect(ABSTIMMUNGSTAG, "201|2009")) %>%
+  # at this stage, check the amount of total votes in the period with "n_distinct(vot$VORLAGE_LANGBEZ)" and you will find, there were 192
+  mutate(vote_ktn = ifelse(sum(AZ_JA_STIMMEN) > sum(AZ_NEIN_STIMMEN), "JA", "NEIN")) %>%
+  group_by(VORLAGE_LANGBEZ) %>%
+  mutate(
+    vote_gde = ifelse(AZ_JA_STIMMEN > AZ_NEIN_STIMMEN, "JA", "NEIN"),
+    count = ifelse(vote_gde == vote_ktn, 1, 0)
+  ) %>%
+  group_by(BFS) %>%
+  summarise(wins = sum(count))
+
+
+
+# convert geodata to df for ggplotting
+gde_df <- broom::tidy(gde, region = "ID") %>%
+  rename("ID" = "id") %>%
+  left_join(gde@data, by = "ID") %>%
+  # join voting data
+  left_join(vot, by = "BFS") %>%
+  mutate(
+    cat = case_when(
+      wins > median(wins, na.rm = TRUE) ~ "WINNER",
+      wins <= median(wins, na.rm = TRUE) ~ "LOSER",
+      TRUE ~ "LAKE"
+    )
+  )
+
+# PLOT DATA ====================================================================
+
+
+# ggplot() +
+#   geom_polygon(
+#     data = gde_df,
+#     colour = "white",
+#     aes(
+#       x = long,
+#       y = lat,
+#       group = group,
+#       # colour = factor(vmax)
+#       fill = wins
+#     )
+#   ) +
+#   theme_minimal() +
+#   scale_fill_gradientn(
+#     colours = c(
+#       "#00797B",
+#       "#B1D6D7",
+#       # "#FFFFFF",
+#       "#E6B8CB",
+#       "#B01657"
+#     ),
+#     na = "#EEEEEE"
+#   )
+
+
+ggplot() +
+  geom_polygon(
+    data = gde_df %>%
+      filter(cat == "WINNER"),
+    colour = "white",
+    aes(
+      x = long,
+      y = lat,
+      group = group,
+      # colour = factor(vmax)
+      fill = wins
+    )
+  ) +
+  scale_fill_gradientn(
+    colours = c("#B1D6D7", "#00797B"),
+    guide = guide_colourbar(
+      order = 1,
+      title = NULL
+    ),
+  ) +
+  ggnewscale::new_scale_fill() +
+  geom_polygon(
+    data = gde_df %>%
+      filter(cat == "LOSER"),
+    colour = "white",
+    aes(
+      x = long,
+      y = lat,
+      group = group,
+      # colour = factor(vmax)
+      fill = wins
+    )
+  ) +
+  scale_fill_gradientn(
+    colours = c("#B01657", "#E6B8CB"),
+    guide = guide_colourbar(
+      order = 2,
+      title = NULL,
+    )
+  ) +
+  ggnewscale::new_scale_fill() +
+  geom_polygon(
+    data = gde_df %>%
+      filter(cat == "LAKE"),
+    colour = "white",
+    fill = "#EEEEEE",
+    aes(
+      x = long,
+      y = lat,
+      group = group
+    )
+  ) +
+  theme_minimal() +
+  labs(shape = "Merged legend")
+
+
+
 

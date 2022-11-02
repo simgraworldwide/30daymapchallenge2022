@@ -31,8 +31,13 @@ rm(new_packages, required_packages)
 
 # LOAD DATA ====================================================================
 
+
 # load geojson for traffic network
 rds <- rgdal::readOGR("https://www.ogd.stadt-zuerich.ch/wfs/geoportal/Signalisierte_Geschwindigkeiten?service=WFS&version=1.1.0&request=GetFeature&outputFormat=GeoJSON&typename=vz_tbl_tempo_l")
+
+
+# DATA WRANGLING ===============================================================
+
 
 # convert data to df
 rds_df <- broom::tidy(rds, region = "id")
@@ -79,6 +84,7 @@ acc_bcl <- acc %>%
 
 
 # DRAW MAP =====================================================================
+
 
 png("01_02_points_lines/01_02.png", width = 2800, height = 2500, res = 200)
 
