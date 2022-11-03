@@ -41,10 +41,10 @@ trs <- sf::read_sf("https://www.ogd.stadt-zuerich.ch/wfs/geoportal/Baumersatz?se
 grn <- sf::read_sf("https://www.ogd.stadt-zuerich.ch/wfs/geoportal/_GDP__Inventar_der_schuetzenswerten_Gaerten_und_Anlagen_von_kommunaler_Bedeutung_der_Stadt_Zuerich?service=WFS&version=1.1.0&request=GetFeature&outputFormat=GeoJSON&typename=gdp_objekte")
 
 
-# DATA WRANGLING ===============================================================
+# PLOT DATA ====================================================================
 
 
-
+png("03_polygons/03.png", width = 2500, height = 2500, res = 200)
 
 ggplot() +
   geom_sf(
@@ -56,39 +56,28 @@ ggplot() +
   geom_sf(
     data = trs,
     # shape = 8,
-    # size = 0.2,
+    size = 4,
     aes(
       colour = faellursache
     )
   ) +
-  scale_color_viridis_d(option = "D") +
-  # scale_colour_manual(values = c(
-  #   "#C2A200",
-  #   "#B9E300",
-  #   "#2ED400",
-  #   "#00A84F",
-  #   "#00C7BE"
-  # )) +
-  theme_void()
+  # scale_color_viridis_d(option = "D") +
+  scale_colour_manual(values = c(
+    "#440154FF",
+    "#3B528BFF",
+    "#21908CFF",
+    "#5DC863FF",
+    "#EB7100"
+  )) +
+  theme_void() +
+  labs(
+    colour = "Fällursache"
+  ) +
+  theme(
+    legend.position = c(0.125, 0.2),
+    legend.title = element_text(size = rel(1.5)),
+    legend.text = element_text(size = rel(1.5))
+  )
   # theme_minimal()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-plot(grn, col = "green")
-points(trs, size = .1)
-plot(trs)
-
+dev.off()
