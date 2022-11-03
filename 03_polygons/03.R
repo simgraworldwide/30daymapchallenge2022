@@ -51,17 +51,23 @@ vot_raw <- readr::read_csv("https://www.web.statistik.zh.ch/ogd/data/KANTON_ZUER
 
 
 # voting data
-vot <- vot_raw %>%
+vot_lessraw <- vot_raw %>%
   filter(stringr::str_detect(ABSTIMMUNGSTAG, "201|2009")) %>%
   # at this stage, check the amount of total votes in the period with "n_distinct(vot$VORLAGE_LANGBEZ)" and you will find, there were 192
-  mutate(vote_ktn = ifelse(sum(AZ_JA_STIMMEN) > sum(AZ_NEIN_STIMMEN), "JA", "NEIN")) %>%
+  mutate(vote_gde = ifelse(AZ_JA_STIMMEN > AZ_NEIN_STIMMEN, "JA", "NEIN")) %>%
   group_by(VORLAGE_LANGBEZ) %>%
   mutate(
-    vote_gde = ifelse(AZ_JA_STIMMEN > AZ_NEIN_STIMMEN, "JA", "NEIN"),
+    ja_ktn = sum(AZ_JA_STIMMEN),
+    ne_ktn = sum(AZ_NEIN_STIMMEN),
+    vote_ktn = ifelse(ja_ktn > ne_ktn, "JA", "NEIN")) %>%
+  ungroup() %>%
+  mutate(
     count = ifelse(vote_gde == vote_ktn, 1, 0)
-  ) %>%
+  )
+vot <- vot_lessraw %>%
   group_by(BFS) %>%
   summarise(wins = sum(count))
+  # summarise(wins = n())
 
 # extract centroids
 # ctr <- data.frame(matrix(NA, length(gde), 3, dimnames = list(NULL, c("ID", "ctr_long", "ctr_lat"))))
@@ -172,7 +178,7 @@ ggplot() +
   ) +
   geom_text(
     data = gde_df %>%
-      filter(NAME %in% c("Dietikon", "Fischenthal")) %>%
+      filter(NAME %in% c("Uster", "Adlikon")) %>%
       select(NAME, ctr_long, ctr_lat) %>%
       distinct(NAME, .keep_all = T),
     aes(
