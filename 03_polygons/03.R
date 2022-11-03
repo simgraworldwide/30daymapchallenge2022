@@ -6,7 +6,7 @@ required_packages <- c(
   "ggnewscale",
   "rgdal",
   "broom",
-  "sp",
+  # "sp",
   "rgeos",
   "readr",
   "ggplot2",
@@ -63,7 +63,17 @@ vot <- vot_raw %>%
   group_by(BFS) %>%
   summarise(wins = sum(count))
 
-
+# extract centroids
+# ctr <- data.frame(matrix(NA, length(gde), 3, dimnames = list(NULL, c("ID", "ctr_long", "ctr_lat"))))
+# for(i in 1:length(gde)){
+#   ctr[i,] <- c(gde$ID[i], round(gde@polygons[[i]]@labpt, 0))
+# }
+ctr <- data.frame(matrix(NA, length(gde), 2, dimnames = list(NULL, c("ctr_long", "ctr_lat"))))
+for(i in 1:length(gde)){
+  ctr[i,] <- gde@polygons[[i]]@labpt
+}
+ctr <- ctr %>%
+  mutate(ID = gde$ID)
 
 # convert geodata to df for ggplotting
 gde_df <- broom::tidy(gde, region = "ID") %>%
@@ -71,6 +81,7 @@ gde_df <- broom::tidy(gde, region = "ID") %>%
   left_join(gde@data, by = "ID") %>%
   # join voting data
   left_join(vot, by = "BFS") %>%
+  left_join(ctr, by = "ID") %>%
   mutate(
     cat = case_when(
       wins > median(wins, na.rm = TRUE) ~ "WINNER",
@@ -82,6 +93,8 @@ gde_df <- broom::tidy(gde, region = "ID") %>%
 # PLOT DATA ====================================================================
 
 
+png("03_polygons/03.png", width = 2500, height = 2500, res = 200)
+
 # ggplot() +
 #   geom_polygon(
 #     data = gde_df,
@@ -90,7 +103,6 @@ gde_df <- broom::tidy(gde, region = "ID") %>%
 #       x = long,
 #       y = lat,
 #       group = group,
-#       # colour = factor(vmax)
 #       fill = wins
 #     )
 #   ) +
@@ -116,16 +128,15 @@ ggplot() +
       x = long,
       y = lat,
       group = group,
-      # colour = factor(vmax)
       fill = wins
     )
   ) +
   scale_fill_gradientn(
     colours = c("#B1D6D7", "#00797B"),
-    guide = guide_colourbar(
-      order = 1,
-      title = NULL
-    ),
+    # guide = guide_colourbar(
+    #   order = 1,
+    #   title = NULL
+    # ),
   ) +
   ggnewscale::new_scale_fill() +
   geom_polygon(
@@ -142,10 +153,10 @@ ggplot() +
   ) +
   scale_fill_gradientn(
     colours = c("#B01657", "#E6B8CB"),
-    guide = guide_colourbar(
-      order = 2,
-      title = NULL,
-    )
+    # guide = guide_colourbar(
+    #   order = 2,
+    #   title = NULL,
+    # )
   ) +
   ggnewscale::new_scale_fill() +
   geom_polygon(
@@ -159,9 +170,36 @@ ggplot() +
       group = group
     )
   ) +
+  geom_text(
+    data = gde_df %>%
+      filter(NAME %in% c("Dietikon", "Fischenthal")) %>%
+      select(NAME, ctr_long, ctr_lat) %>%
+      distinct(NAME, .keep_all = T),
+    aes(
+      x = ctr_long,
+      y = ctr_lat,
+      label = NAME
+    ),
+    # alpha = .3,
+    colour = "black",
+    fontface = "bold",
+    nudge_x = 500,
+    size = 5
+  ) +
   theme_minimal() +
-  labs(shape = "Merged legend")
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    legend.position = "none",
+    text = element_text(family = "Arial")
+  ) +
+  labs(
+    x = "",
+    y = ""
+  )
 
+dev.off()
 
 
 
